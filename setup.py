@@ -13,7 +13,7 @@
 #You should have received a copy of the GNU General Public License
 #along with this program; if not, write to the Free Software
 #Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-from distutils.core import setup
+from setuptools import setup
 import os
 import re
 
@@ -33,12 +33,12 @@ def get_version(path):
     return _get_version_match(read_file(path))
 
 setup(
-    name='pySMART',
+    name='pySMARTX',
     version=get_version(os.path.join('pySMART', '__init__.py')),
     author='Marc Herndon',
     author_email='Herndon.MarcT@gmail.com',
     packages=['pySMART'],
-    url='none',
+    url='https://github.com/winkidney/pySMARTX',
     license='GNU GPLv2.htm',
     description='Wrapper for smartctl (smartmontools)',
     long_description=open('README.txt').read(),
