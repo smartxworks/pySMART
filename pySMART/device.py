@@ -124,7 +124,7 @@ class Device(object):
         # If no interface type was provided, scan for the device
         elif self.interface is None:
             _grep = 'find' if OS == 'Windows' else 'grep'
-            cmd = Popen('smartctl --scan-open | {0} "{1}"'.format(
+            cmd = Popen('/usr/bin/env smartctl --scan-open | {0} "{1}"'.format(
                 _grep, self.name), shell=True, stdout=PIPE, stderr=PIPE)
             _stdout, _stderr = cmd.communicate()
             if _stdout != '':
@@ -428,7 +428,7 @@ class Device(object):
         Can be called at any time to refresh the `pySMART.device.Device`
         object's data content.
         """
-        cmd = Popen('smartctl -d {0} -a /dev/{1}'.format(
+        cmd = Popen('/usr/bin/env smartctl -d {0} -a /dev/{1}'.format(
             smartctl_type[self.interface], self.name), shell=True,
                     stdout=PIPE, stderr=PIPE)
         _stdout, _stderr = cmd.communicate()

@@ -117,7 +117,7 @@ warnings.formatwarning = _warning_on_one_line
 
 def verify_smartctl():
     # Verify smartctl is on the system path and meets the minimum required version
-    cmd = Popen('smartctl --version', shell=True, stdout=PIPE, stderr=PIPE)
+    cmd = Popen('/usr/bin/env smartctl --version', shell=True, stdout=PIPE, stderr=PIPE)
     _stdout, _stderr = cmd.communicate()
     if _stdout == '':
         raise Exception(

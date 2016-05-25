@@ -91,7 +91,7 @@ class DeviceList(object):
         # before scanning for disks
         if OS == 'Windows':
             rescan_device_busses()
-        cmd = Popen('smartctl --scan-open', shell=True,
+        cmd = Popen('/usr/bin/env smartctl --scan-open', shell=True,
                     stdout=PIPE, stderr=PIPE)
         _stdout, _stderr = cmd.communicate()
         for line in _stdout.split('\n'):
