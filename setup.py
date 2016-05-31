@@ -33,7 +33,7 @@ def get_version(path):
     return _get_version_match(read_file(path))
 
 setup(
-    name='pySMART.smartx',
+    name='pySMART',
     version=get_version(os.path.join('pySMART', '__init__.py')),
     author='Marc Herndon',
     author_email='Herndon.MarcT@gmail.com',
