@@ -24,13 +24,13 @@ Methods are provided for initiating self tests and querying their results.
 # Python built-ins
 from __future__ import print_function
 import re  # Don't delete this 'un-used' import
-from subprocess import Popen, PIPE
 import warnings
 
 # pySMART module imports
 from .attribute import Attribute
 from .test_entry import Test_Entry
 from .utils import *
+
 
 class Device(object):
     """
@@ -40,6 +40,8 @@ class Device(object):
     """
     def __init__(self, name, interface=None):
         """Instantiates and initializes the `pySMART.device.Device`."""
+        from subprocess import Popen, PIPE
+
         assert interface is None or interface.lower() in [
             'ata', 'csmi', 'sas', 'sat', 'sata', 'scsi']
         self.name = name.replace('/dev/', '')
@@ -186,6 +188,7 @@ class Device(object):
         Disambiguates generic device types ATA and SCSI into more specific
         ATA, SATA, SAS, SAT and SCSI.
         """
+        from subprocess import Popen, PIPE
         # SCSI devices might be SCSI, SAS or SAT
         # ATA device might be ATA or SATA
         if self.interface in ['scsi', 'ata']:
@@ -386,6 +389,7 @@ class Device(object):
         * **(str):** Estimated self-test completion time if a test is started.
         Otherwise 'None'.
         """
+        from subprocess import Popen, PIPE
         if self._test_running:
             return (1, 'Self-test already in progress. Please wait.',
                     self._test_ECD)
@@ -428,6 +432,7 @@ class Device(object):
         Can be called at any time to refresh the `pySMART.device.Device`
         object's data content.
         """
+        from subprocess import Popen, PIPE
         cmd = Popen('/usr/bin/env smartctl -d {0} -a /dev/{1}'.format(
             smartctl_type[self.interface], self.name), shell=True,
                     stdout=PIPE, stderr=PIPE)
