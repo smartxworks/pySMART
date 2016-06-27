@@ -32,6 +32,7 @@ from .attribute import Attribute
 from .test_entry import Test_Entry
 from .utils import *
 
+
 class Device(object):
     """
     Represents any device attached to an internal storage interface, such as a
@@ -124,9 +125,7 @@ class Device(object):
         # If no interface type was provided, scan for the device
         elif self.interface is None:
             _grep = 'find' if OS == 'Windows' else 'grep'
-            cmd = Popen('/usr/bin/env smartctl --scan-open | {0} "{1}"'.format(
-                _grep, self.name), shell=True, stdout=PIPE, stderr=PIPE)
-            _stdout, _stderr = cmd.communicate()
+            _stdout, _stderr = self._cmd_scan_open(_grep)
             if _stdout != '':
                 self.interface = _stdout.split(' ')[2]
                 # Disambiguate the generic interface to a specific type
@@ -194,26 +193,19 @@ class Device(object):
             else:
                 test = 'sata'
             # Look for a SATA PHY to detect SAT and SATA
-            cmd = Popen('smartctl -d {0} -l sataphy /dev/{1}'.format(
-                smartctl_type[test], self.name), shell=True,
-                        stdout=PIPE, stderr=PIPE)
-            _stdout, _stderr = cmd.communicate()
+            _stdout, _stderr = self._cmd_sataphy(test)
             if 'GP Log 0x11' in _stdout.split('\n')[3]:
                 self.interface = test
         # If device type is still SCSI (not changed to SAT above), then
         # check for a SAS PHY
         if self.interface == 'scsi':
-            cmd = Popen('smartctl -d scsi -l sasphy /dev/{0}'.format(
-                self.name), shell=True, stdout=PIPE, stderr=PIPE)
-            _stdout, _stderr = cmd.communicate()
+            _stdout, _stderr = self._cmd_sasphy()
             if 'SAS SSP' in _stdout.split('\n')[4]:
                 self.interface = 'sas'
             # Some older SAS devices do not support the SAS PHY log command.
             # For these, see if smartmontools reports a transport protocol.
             else:
-                cmd = Popen('smartctl -d scsi -a /dev/{0}'.format(
-                    self.name), shell=True, stdout=PIPE, stderr=PIPE)
-                _stdout, _stderr = cmd.communicate()
+                _stdout, _stderr = self._cmd_scsi_all()
                 for line in _stdout.split('\n'):
                     if 'Transport protocol' in line and 'SAS' in line:
                         self.interface = 'sas'
@@ -358,6 +350,78 @@ class Device(object):
                     if not self.assessment == 'FAIL':
                         self.assessment = 'WARN'
 
+    def _cmd_all_attr(self):
+        cmd = Popen('/usr/bin/env smartctl -d {0} -a /dev/{1}'.format(
+            smartctl_type[self.interface], self.name), shell=True,
+            stdout=PIPE, stderr=PIPE)
+        return cmd.communicate()
+
+    def _cmd_power_on_scan(self):
+        cmd = Popen(
+            'smartctl -d scsi -l background /dev/{1}'.format(
+                smartctl_type[self.interface],
+                self.name,
+            ),
+            shell=True,
+            stdout=PIPE,
+            stderr=PIPE,
+        )
+        return cmd.communicate()
+
+    def _cmd_run_test(self, test_type):
+        cmd = Popen(
+            'smartctl -d {0} -t {1} /dev/{2}'.format(
+                smartctl_type[self.interface],
+                test_type,
+                self.name,
+            ),
+            shell=True,
+            stdout=PIPE,
+            stderr=PIPE,
+        )
+        return cmd.communicate()
+
+    def _cmd_sataphy(self, test):
+        cmd = Popen(
+            'smartctl -d {0} -l sataphy /dev/{1}'.format(
+                smartctl_type[test], self.name
+            ),
+            shell=True,
+            stdout=PIPE,
+            stderr=PIPE
+        )
+        return cmd.communicate()
+
+    def _cmd_sasphy(self):
+        cmd = Popen(
+            'smartctl -d scsi -l sasphy /dev/{0}'.format(self.name),
+            shell=True,
+            stdout=PIPE,
+            stderr=PIPE
+        )
+        return cmd.communicate()
+
+    def _cmd_scsi_all(self):
+        cmd = Popen(
+            'smartctl -d scsi -a /dev/{0}'.format(self.name),
+            shell=True,
+            stdout=PIPE,
+            stderr=PIPE,
+        )
+        return cmd.communicate()
+
+    def _cmd_scan_open(self, grep_cmd_name):
+        cmd = Popen(
+            '/usr/bin/env smartctl --scan-open | {0} "{1}"'.format(
+                grep_cmd_name,
+                self.name,
+            ),
+            shell=True,
+            stdout=PIPE,
+            stderr=PIPE,
+        )
+        return cmd.communicate()
+
     def run_selftest(self, test_type):
         """
         Instructs a device to begin a SMART self-test. All tests are run in
@@ -394,10 +458,7 @@ class Device(object):
                     smartctl_type[self.interface] == 'scsi'):
                 return (2, "Cannot perform 'conveyance' test on SAS/SCSI "
                         "devices.", None)
-            cmd = Popen('smartctl -d {0} -t {1} /dev/{2}'.format(
-                smartctl_type[self.interface], test_type, self.name),
-                        shell=True, stdout=PIPE, stderr=PIPE)
-            _stdout, _stderr = cmd.communicate()
+            _stdout, _stderr = self._cmd_run_test(test_type)
             _success = False
             _running = False
             for line in _stdout.split('\n'):
@@ -428,10 +489,7 @@ class Device(object):
         Can be called at any time to refresh the `pySMART.device.Device`
         object's data content.
         """
-        cmd = Popen('/usr/bin/env smartctl -d {0} -a /dev/{1}'.format(
-            smartctl_type[self.interface], self.name), shell=True,
-                    stdout=PIPE, stderr=PIPE)
-        _stdout, _stderr = cmd.communicate()
+        _stdout, _stderr = self._cmd_all_attr()
         parse_self_tests = False
         parse_ascq = False
         self.tests = []
@@ -609,10 +667,7 @@ class Device(object):
             # If not obtained above, make a direct attempt to extract power on
             # hours from the background scan results log.
             if self.diags['Power_On_Hours'] == '-':
-                cmd = Popen('smartctl -d scsi -l background /dev/{1}'.format(
-                    smartctl_type[self.interface], self.name), shell=True,
-                            stdout=PIPE, stderr=PIPE)
-                _stdout, _stderr = cmd.communicate()
+                _stdout, _stderr = self._cmd_power_on_scan()
                 for line in _stdout.split('\n'):
                     if 'power on time' in line:
                         self.diags['Power_On_Hours'] = line.split(
