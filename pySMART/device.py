@@ -33,6 +33,9 @@ from .test_entry import Test_Entry
 from .utils import *
 
 
+_interface_types = ['ata', 'csmi', 'sas', 'sat', 'sata', 'scsi']
+
+
 class Device(object):
     """
     Represents any device attached to an internal storage interface, such as a
@@ -41,8 +44,7 @@ class Device(object):
     """
     def __init__(self, name, interface=None):
         """Instantiates and initializes the `pySMART.device.Device`."""
-        assert interface is None or interface.lower() in [
-            'ata', 'csmi', 'sas', 'sat', 'sata', 'scsi']
+        assert interface is None or interface.lower() in _interface_types
         self.name = name.replace('/dev/', '')
         """
         **(str):** Device's hardware ID, without the '/dev/' prefix.
@@ -209,6 +211,9 @@ class Device(object):
                 for line in _stdout.split('\n'):
                     if 'Transport protocol' in line and 'SAS' in line:
                         self.interface = 'sas'
+        # Use scsi as the default type
+        if self.interface not in _interface_types:
+            self.interface = "scsi"
 
     def get_selftest_result(self, output=None):
         """
@@ -493,7 +498,7 @@ class Device(object):
         parse_self_tests = False
         parse_ascq = False
         self.tests = []
-        for line in _stdout.split('\n'):
+        for line in _stdout.splitlines():
             if line.strip() == '':  # Blank line stops sub-captures
                 if parse_self_tests == True:
                     parse_self_tests = False
@@ -504,6 +509,8 @@ class Device(object):
                     self.messages.append(message)
             if parse_ascq:
                 message += ' ' + line.lstrip().rstrip()
+            if "Self Test" in line:
+                continue
             if parse_self_tests:
                 num = line[1:3]
                 if smartctl_type[self.interface] == 'scsi':
