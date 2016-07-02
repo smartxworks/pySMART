@@ -6,6 +6,9 @@ import pytest
 
 @pytest.fixture
 def intel_scsi_cmd_scsi_all():
+    """
+    smartctl -d scsi -a
+    """
     stderr = ""
     stdout = """
 smartctl 6.2 2013-07-26 r3841 [x86_64-linux-3.10.0-327.3.1.el7.x86_64] (local build)
@@ -38,6 +41,9 @@ No self-tests have been logged
 
 @pytest.fixture
 def intel_scsi_cmd_sasphy():
+    """
+    smartctl -d scsi -l sasphy
+    """
     stderr = ""
     stdout = """
 smartctl 6.2 2013-07-26 r3841 [x86_64-linux-3.10.0-327.3.1.el7.x86_64] (local build)
@@ -51,6 +57,9 @@ scsiPrintSasPhy Log Sense Failed [unsupported field in scsi command]
 
 @pytest.fixture
 def intel_scsi_cmd_sataphy():
+    """
+    smartctl -d scsi -l sataphy
+    """
     stderr = ""
     stdout = """
 smartctl 6.2 2013-07-26 r3841 [x86_64-linux-3.10.0-327.3.1.el7.x86_64] (local build)
@@ -101,7 +110,6 @@ class TestDeviceWithSeagate:
         intel_scsi_cmd_sasphy,
         intel_scsi_cmd_sataphy,
         intel_cmd_scan_open_as_root,
-        cmd_scan_open_non_root,
     ):
         """
         This test is to ensure that the parse can be executed without exception.
@@ -130,5 +138,11 @@ class TestDeviceWithSeagate:
             mocked_sata.return_value = intel_scsi_cmd_sataphy
             mocked_scan.return_value = intel_cmd_scan_open_as_root
             device = Device("sdg")
-            mocked_scan.return_value = cmd_scan_open_non_root
-            device = Device("sdg")
+            assert device.serial == "BTWL435203C0480QGN"
+            assert device.model is None
+            assert device.capacity == "480 GB"
+            assert device.firmware is None
+            assert device.supports_smart is True
+            assert device.messages is not None
+            assert device.is_ssd is True
+            assert device.assessment == "PASS"
