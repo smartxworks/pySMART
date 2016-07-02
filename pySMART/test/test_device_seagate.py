@@ -83,7 +83,7 @@ Num  Test              Status                 segment  LifeTime  LBA_first_err [
 #20  Background short  Completed                   -    1555                 - [-   -    -]
 Long (extended) Self Test duration: 32767 seconds [546.1 minutes]
     """
-    return stdout, stdout
+    return stdout, stderr
 
 
 @pytest.fixture
@@ -174,7 +174,6 @@ class TestDeviceWithSeagate:
         seagate_cmd_sasphy,
         seagate_cmd_sataphy,
         cmd_scan_open_as_root,
-        cmd_scan_open_non_root,
     ):
         """
         This test is to ensure that the parse can be executed without exception.
@@ -203,5 +202,11 @@ class TestDeviceWithSeagate:
             mocked_sata.return_value = seagate_cmd_sataphy
             mocked_scan.return_value = cmd_scan_open_as_root
             device = Device("sdg")
-            mocked_scan.return_value = cmd_scan_open_non_root
-            device = Device("sdg")
+            assert device.serial == "Z3E018060000Z3E01806"
+            assert device.model == "ST200FM0053"
+            assert device.capacity == "200 GB"
+            assert device.firmware == "LV60"
+            assert device.supports_smart is True
+            assert device.messages is not None
+            assert device.is_ssd is True
+            assert device.assessment == "PASS"
