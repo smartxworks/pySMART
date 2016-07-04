@@ -182,7 +182,7 @@ class TestDeviceWithSeagate:
         with nested(
             mock.patch.object(
                 Device,
-                "_cmd_all_attr",
+                "_cmd_all_with_type",
             ),
             mock.patch.object(
                 Device,
@@ -196,8 +196,8 @@ class TestDeviceWithSeagate:
                 Device,
                 "_cmd_scan_open",
             ),
-        ) as (mocked_all, mocked_sas, mocked_sata, mocked_scan):
-            mocked_all.return_value = seagate_cmd_all_attr
+        ) as (mocked_all_with_type, mocked_sas, mocked_sata, mocked_scan):
+            mocked_all_with_type.return_value = seagate_cmd_all_attr
             mocked_sas.return_value = seagate_cmd_sasphy
             mocked_sata.return_value = seagate_cmd_sataphy
             mocked_scan.return_value = cmd_scan_open_as_root

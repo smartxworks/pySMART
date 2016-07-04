@@ -23,7 +23,7 @@ Methods are provided for initiating self tests and querying their results.
 """
 # Python built-ins
 from __future__ import print_function
-import re  # Don't delete this 'un-used' import
+import re
 import warnings
 
 # pySMART module imports
@@ -33,6 +33,9 @@ from .utils import *
 
 
 _interface_types = ['ata', 'csmi', 'sas', 'sat', 'sata', 'scsi']
+
+
+_intel_model_regex = re.compile("Device Model:\s*(.*)")
 
 
 class Device(object):
@@ -139,6 +142,9 @@ class Device(object):
         # If a valid device was detected, populate its information
         if self.interface is not None:
             self.update()
+
+        if self.model is None:
+            self.model = self._find_model_from_all_cmd()
 
     def __repr__(self):
         """Define a basic representation of the class object."""
@@ -355,11 +361,23 @@ class Device(object):
                     if not self.assessment == 'FAIL':
                         self.assessment = 'WARN'
 
-    def _cmd_all_attr(self):
+    def _cmd_all_with_type(self):
         from subprocess import Popen, PIPE
         cmd = Popen('/usr/bin/env smartctl -d {0} -a /dev/{1}'.format(
             smartctl_type[self.interface], self.name), shell=True,
             stdout=PIPE, stderr=PIPE)
+        return cmd.communicate()
+
+    def _cmd_all(self):
+        from subprocess import Popen, PIPE
+        cmd = Popen(
+            '/usr/bin/env smartctl -a /dev/{0}'.format(
+                self.name
+            ),
+            shell=True,
+            stdout=PIPE,
+            stderr=PIPE,
+        )
         return cmd.communicate()
 
     def _cmd_power_on_scan(self):
@@ -494,6 +512,15 @@ class Device(object):
             return (2, "Unknown test type '{0}' requested.".format(test_type),
                     None)
 
+    def _find_model_from_all_cmd(self):
+        stdout, stderr = self._cmd_all()
+        if stderr:
+            return None
+        model_ret = re.findall(_intel_model_regex, stdout)
+        if model_ret:
+            return model_ret[0]
+        return None
+
     def update(self):
         """
         Queries for device information using smartctl and updates all
@@ -501,7 +528,7 @@ class Device(object):
         Can be called at any time to refresh the `pySMART.device.Device`
         object's data content.
         """
-        _stdout, _stderr = self._cmd_all_attr()
+        _stdout, _stderr = self._cmd_all_with_type()
         parse_self_tests = False
         parse_ascq = False
         self.tests = []
