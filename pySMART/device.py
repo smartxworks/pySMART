@@ -225,8 +225,8 @@ class Device(object):
         Checks current Self-Test status (parsed from capabilities)
 
         ##Returns:
-        * **(int):** Return smartctl self-test exec status code. This number has to be shifted
-                     4 bits to the right before comparing to the following:
+        * **(int):** Return smartctl self-test exec status code. This number is shifted
+                     4 bits to the right, so it can be compared to the following:
             * 0: completed without error or no self-test ever run
             * 1: aborted
             * 2: interrupted
@@ -235,16 +235,11 @@ class Device(object):
             * 5: prev. self-test completed, but electrical element failed
             * 6: prev. self-test completed, but servo element failed
             * 7: prev. self-test completed, but read element failed
-            * 8: prev. self-test completed, but device is suspected of having handling damage        * **(`Test_Entry` or str):** Most recent `Test_Entry` object (or
+            * 8: prev. self-test completed, but device is suspected of having handling damage
         * **(str):** Status message.
         """
     def get_current_test_status(self):
-            cmd = Popen('smartctl -d {0} -c /dev/{1}'.format(
-                smartctl_type[self.interface], self.name),
-                        shell=True, stdout=PIPE, stderr=PIPE)
-            _stdout, _stderr = cmd.communicate()
-            _success = False
-            _running = False
+            _stdout, _stderr = self._cmd_get_capabilities()
             data = ""
             collectData = False
             for line in _stdout.split('\n'):
@@ -268,7 +263,8 @@ class Device(object):
 
             if (data_match != None):
                 if data_match.group(1) != None:
-                    status = data_match.group(1).strip()
+                    status = int(data_match.group(1).strip())
+                    status = status>>4
                 if data_match.group(2) != None:
                     summary = data_match.group(2).strip()
 
@@ -453,6 +449,18 @@ class Device(object):
             shell=True,
             stdout=PIPE,
             stderr=PIPE,
+        )
+        return cmd.communicate()
+
+    def _cmd_get_capabilities(self):
+        cmd = Popen(
+            'smartctl -d {0} -c /dev/{1}'.format(
+                smartctl_type[self.interface],
+                self.name
+            ),
+            shell=True,
+            stdout=PIPE,
+            stderr=PIPE
         )
         return cmd.communicate()
 
