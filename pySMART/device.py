@@ -221,6 +221,55 @@ class Device(object):
         if self.interface not in _interface_types:
             self.interface = "scsi"
 
+        """
+        Checks current Self-Test status (parsed from capabilities)
+
+        ##Returns:
+        * **(int):** Return smartctl self-test exec status code. This number is shifted
+                     4 bits to the right, so it can be compared to the following:
+            * 0: completed without error or no self-test ever run
+            * 1: aborted
+            * 2: interrupted
+            * 3: fatal error
+            * 4: prev. self-test completed, but failed
+            * 5: prev. self-test completed, but electrical element failed
+            * 6: prev. self-test completed, but servo element failed
+            * 7: prev. self-test completed, but read element failed
+            * 8: prev. self-test completed, but device is suspected of having handling damage
+        * **(str):** Status message.
+        """
+    def get_current_test_status(self):
+            _stdout, _stderr = self._cmd_get_capabilities()
+            data = ""
+            collectData = False
+            for line in _stdout.split('\n'):
+                if 'Self-test execution status' in line:
+                    collectData = True
+                if 'Total time to complete Offline' in line:
+                    break
+                if collectData:
+                    data += " " + line.strip()
+
+            #                                            1                   2        3       4           5       6
+            #  e.g. summary='Self-test execution status:      (   0) The previous self-test routine completed without error or no self-test has ever been run.'
+            #
+            #  1:  0
+            #  2:  The previous self-test routine completed without error or no self-test has ever been run.
+            #
+            data_match = re.search("^Self-test execution status.*\((.*?)\)\s(.*)", data.strip())
+
+            status = ""
+            summary = ""
+
+            if (data_match != None):
+                if data_match.group(1) != None:
+                    status = int(data_match.group(1).strip())
+                    status = status>>4
+                if data_match.group(2) != None:
+                    summary = data_match.group(2).strip()
+
+            return (status, summary)
+
     def get_selftest_result(self, output=None):
         """
         Refreshes a device's `pySMART.device.Device.tests` attribute to obtain
@@ -400,6 +449,18 @@ class Device(object):
             shell=True,
             stdout=PIPE,
             stderr=PIPE,
+        )
+        return cmd.communicate()
+
+    def _cmd_get_capabilities(self):
+        cmd = Popen(
+            'smartctl -d {0} -c /dev/{1}'.format(
+                smartctl_type[self.interface],
+                self.name
+            ),
+            shell=True,
+            stdout=PIPE,
+            stderr=PIPE
         )
         return cmd.communicate()
 
