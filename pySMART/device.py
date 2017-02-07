@@ -47,7 +47,8 @@ class Device(object):
     """
     def __init__(self, name, interface=None):
         """Instantiates and initializes the `pySMART.device.Device`."""
-        assert interface is None or interface.lower() in _interface_types
+        assert (interface is None or interface.lower() in _interface_types or
+                ',' in interface)
         self.name = name.replace('/dev/', '')
         """
         **(str):** Device's hardware ID, without the '/dev/' prefix.
@@ -175,7 +176,7 @@ class Device(object):
         the output of smartctl.
         """
         if self.tests is not None:
-            if smartctl_type[self.interface] == 'scsi':
+            if self._get_device_type() == 'scsi':
                 print("{0:3}{1:17}{2:23}{3:7}{4:14}{5:15}".format(
                     'ID', 'Test Description', 'Status', 'Hours',
                     '1st_Error@LBA', '[SK  ASC  ASCQ]'))
@@ -293,7 +294,7 @@ class Device(object):
         Otherwise 'None'.
         """
         # SCSI self-test logs hold 20 entries while ATA logs hold 21
-        if smartctl_type[self.interface] == 'scsi':
+        if self._get_device_type() == 'scsi':
             maxlog = 20
         else:
             maxlog = 21
@@ -343,7 +344,7 @@ class Device(object):
                 if self._test_running:
                     if (not ('in progress' in self.tests[0].status or
                              'NOW' in self.tests[0].hours) and
-                            smartctl_type[self.interface] == 'scsi'):
+                            self._get_device_type() == 'scsi'):
                         self._test_running = False
                         self._test_ECD = None
                         if output == 'str':
@@ -361,7 +362,7 @@ class Device(object):
             if self._test_running:
                 if (not ('in progress' in self.tests[0].status or
                          'NOW' in self.tests[0].hours) and
-                        smartctl_type[self.interface] == 'scsi'):
+                        self._get_device_type() == 'scsi'):
                     self._test_running = False
                     self._test_ECD = None
                     if output == 'str':
@@ -387,7 +388,7 @@ class Device(object):
         value set. Generates an warning message for any such attributes and
         updates the self-assessment value if necessary.
         """
-        if smartctl_type[self.interface] == 'scsi':
+        if self._get_device_type() == 'scsi':
             return
         for attr in self.attributes:
             if attr is not None:
@@ -412,7 +413,7 @@ class Device(object):
 
     def _cmd_all_with_type(self):
         cmd = Popen('/usr/bin/env smartctl -d {0} -a /dev/{1}'.format(
-            smartctl_type[self.interface], self.name), shell=True,
+            self._get_device_type(), self.name), shell=True,
             stdout=PIPE, stderr=PIPE)
         return cmd.communicate()
 
@@ -429,10 +430,7 @@ class Device(object):
 
     def _cmd_power_on_scan(self):
         cmd = Popen(
-            'smartctl -d scsi -l background /dev/{1}'.format(
-                smartctl_type[self.interface],
-                self.name,
-            ),
+            'smartctl -d scsi -l background /dev/{0}'.format(self.name),
             shell=True,
             stdout=PIPE,
             stderr=PIPE,
@@ -442,7 +440,7 @@ class Device(object):
     def _cmd_run_test(self, test_type):
         cmd = Popen(
             'smartctl -d {0} -t {1} /dev/{2}'.format(
-                smartctl_type[self.interface],
+                self._get_device_type(),
                 test_type,
                 self.name,
             ),
@@ -455,7 +453,7 @@ class Device(object):
     def _cmd_get_capabilities(self):
         cmd = Popen(
             'smartctl -d {0} -c /dev/{1}'.format(
-                smartctl_type[self.interface],
+                self._get_device_type(),
                 self.name
             ),
             shell=True,
@@ -538,7 +536,7 @@ class Device(object):
                     self._test_ECD)
         if test_type.lower() in ['short', 'long', 'conveyance']:
             if (test_type.lower() == 'conveyance' and
-                    smartctl_type[self.interface] == 'scsi'):
+                    self._get_device_type() == 'scsi'):
                 return (2, "Cannot perform 'conveyance' test on SAS/SCSI "
                         "devices.", None)
             _stdout, _stderr = self._cmd_run_test(test_type)
@@ -574,6 +572,19 @@ class Device(object):
             return model_ret[0]
         return None
 
+    def _get_device_type(self):
+        """
+        Return the device type based on the current interface
+        """
+        if ',' in self.interface:
+            # More complex cases of device type, see smartctl manual for
+            # the details. Use it as the device type as it is
+            device = self.interface
+        else:
+            device = smartctl_type[self.interface]
+
+        return device
+
     def update(self):
         """
         Queries for device information using smartctl and updates all
@@ -600,7 +611,7 @@ class Device(object):
                 continue
             if parse_self_tests:
                 num = line[1:3]
-                if smartctl_type[self.interface] == 'scsi':
+                if self._get_device_type() == 'scsi':
                     format = 'scsi'
                     test_type = line[5:23].rstrip()
                     status = line[23:46].rstrip()
@@ -700,7 +711,7 @@ class Device(object):
                                int(self.diags['Load_Cycle_Spec'])), 0))) + '%'
             if 'Elements in grown defect list' in line:
                 self.diags['Reallocated_Sector_Ct'] = line.split(':')[1].strip()
-            if 'read:' in line and smartctl_type[self.interface] == 'scsi':
+            if 'read:' in line and self._get_device_type() == 'scsi':
                 line_ = ' '.join(line.split()).split(' ')
                 if (line_[1] == '0' and line_[2] == '0' and
                         line_[3] == '0' and line_[4] == '0'):
@@ -712,7 +723,7 @@ class Device(object):
                     self.diags['Corrected_Reads'] = line_[4]
                 self.diags['Reads_GB'] = line_[6]
                 self.diags['Uncorrected_Reads'] = line_[7]
-            if 'write:' in line and smartctl_type[self.interface] == 'scsi':
+            if 'write:' in line and self._get_device_type() == 'scsi':
                 line_ = ' '.join(line.split()).split(' ')
                 if (line_[1] == '0' and line_[2] == '0' and
                         line_[3] == '0' and line_[4] == '0'):
@@ -724,7 +735,7 @@ class Device(object):
                     self.diags['Corrected_Writes'] = line_[4]
                 self.diags['Writes_GB'] = line_[6]
                 self.diags['Uncorrected_Writes'] = line_[7]
-            if 'verify:' in line and smartctl_type[self.interface] == 'scsi':
+            if 'verify:' in line and self._get_device_type() == 'scsi':
                 line_ = ' '.join(line.split()).split(' ')
                 if (line_[1] == '0' and line_[2] == '0' and
                         line_[3] == '0' and line_[4] == '0'):
@@ -740,7 +751,7 @@ class Device(object):
                 self.diags['Non-Medium_Errors'] = line.split(':')[1].strip()
             if 'Accumulated power on time' in line:
                 self.diags['Power_On_Hours'] = line.split(':')[1].split(' ')[1]
-        if not smartctl_type[self.interface] == 'scsi':
+        if not self._get_device_type() == 'scsi':
             # Parse the SMART table for below-threshold attributes and create
             # corresponding warnings for non-SCSI disks
             self._make_SMART_warnings()

@@ -28,6 +28,7 @@ from subprocess import Popen, PIPE
 from .device import Device
 from .utils import OS, rescan_device_busses
 
+
 class DeviceList(object):
     """
     Represents a list of all the storage devices connected to this computer.
@@ -76,7 +77,7 @@ class DeviceList(object):
                         if device.serial == otherdevice.serial:
                             to_delete.append(otherindex)
                             device._sd_name = otherdevice.name
-            if device.capacity == None and index not in to_delete:
+            if device.capacity is None and index not in to_delete:
                 to_delete.append(index)
         # Recreate the self.devices list without the marked indeces
         self.devices[:] = [v for i, v in enumerate(self.devices)
@@ -95,18 +96,28 @@ class DeviceList(object):
                     stdout=PIPE, stderr=PIPE)
         _stdout, _stderr = cmd.communicate()
         for line in _stdout.split('\n'):
-            if not ('failed:' in line or line == ''):
-                name = line.split(' ')[0].replace('/dev/', '')
+            if 'failed:' in line or line == '':
+                continue
+
+            line_parts = line.split(' ')
+            name = line_parts[0].replace('/dev/', '')
+            # By default device types will be disambiguated by Device.__init__
+            interface = None
+
+            if name[0:4] == 'csmi':
                 # CSMI devices are explicitly of the 'csmi' type and do not
                 # require further disambiguation
-                if name[0:4] == 'csmi':
-                    self.devices.append(Device(name, interface='csmi'))
-                # Other device types will be disambiguated by Device.__init__
-                else:
-                    self.devices.append(Device(name))
+                interface = 'csmi'
+            elif line_parts[1] == '-d' and ',' in line_parts[2]:
+                # More complex cases of device type, see smartctl manual for
+                # the details. Do not require further disambiguation
+                interface = line_parts[2]
+            self.devices.append(Device(name, interface=interface))
+
         # Remove duplicates and unwanted devices (optical, etc.) from the list
         self._cleanup()
         # Sort the list alphabetically by device name
         self.devices.sort(key=lambda device: device.name)
+
 
 __all__ = ['DeviceList']
