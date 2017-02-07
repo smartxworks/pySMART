@@ -100,7 +100,7 @@ class DeviceList(object):
                 continue
 
             line_parts = line.split(' ')
-            name = line_parts[0].replace('/dev/', '')
+            name = line_parts[0]
             # By default device types will be disambiguated by Device.__init__
             interface = None
 

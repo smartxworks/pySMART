@@ -45,14 +45,16 @@ class Device(object):
     hard drive or DVD-ROM, and detected by smartmontools. Includes eSATA
     (considered SATA) but excludes other external devices (USB, Firewire).
     """
-    def __init__(self, name, interface=None):
+    def __init__(self, path, interface=None):
         """Instantiates and initializes the `pySMART.device.Device`."""
         assert (interface is None or interface.lower() in _interface_types or
                 ',' in interface)
-        self.name = name.replace('/dev/', '')
+        self.path = path
+        """**(str):** Device's path"""
+        self.name = path.replace('/dev/', '')
         """
         **(str):** Device's hardware ID, without the '/dev/' prefix.
-        (ie: sda (Linux), pd0 (Windows))
+        (ie: sda (Linux), pd0 (Windows), same as path (Mac OS))
         """
         if self.name[:2].lower() == 'pd':
             self.name = pd_to_sd(self.name[2:])
@@ -149,8 +151,8 @@ class Device(object):
 
     def __repr__(self):
         """Define a basic representation of the class object."""
-        return "<%s device on /dev/%s mod:%s sn:%s>" % (
-            self.interface.upper(), self.name, self.model, self.serial)
+        return "<%s device on %s mod:%s sn:%s>" % (
+            self.interface.upper(), self.path, self.model, self.serial)
 
     def all_attributes(self):
         """
@@ -412,16 +414,14 @@ class Device(object):
                         self.assessment = 'WARN'
 
     def _cmd_all_with_type(self):
-        cmd = Popen('/usr/bin/env smartctl -d {0} -a /dev/{1}'.format(
-            self._get_device_type(), self.name), shell=True,
+        cmd = Popen('/usr/bin/env smartctl -d {0} -a {1}'.format(
+            self._get_device_type(), self.path), shell=True,
             stdout=PIPE, stderr=PIPE)
         return cmd.communicate()
 
     def _cmd_all(self):
         cmd = Popen(
-            '/usr/bin/env smartctl -a /dev/{0}'.format(
-                self.name
-            ),
+            '/usr/bin/env smartctl -a {0}'.format(self.path),
             shell=True,
             stdout=PIPE,
             stderr=PIPE,
@@ -430,7 +430,7 @@ class Device(object):
 
     def _cmd_power_on_scan(self):
         cmd = Popen(
-            'smartctl -d scsi -l background /dev/{0}'.format(self.name),
+            'smartctl -d scsi -l background {0}'.format(self.path),
             shell=True,
             stdout=PIPE,
             stderr=PIPE,
@@ -439,10 +439,10 @@ class Device(object):
 
     def _cmd_run_test(self, test_type):
         cmd = Popen(
-            'smartctl -d {0} -t {1} /dev/{2}'.format(
+            'smartctl -d {0} -t {1} {2}'.format(
                 self._get_device_type(),
                 test_type,
-                self.name,
+                self.path,
             ),
             shell=True,
             stdout=PIPE,
@@ -452,9 +452,9 @@ class Device(object):
 
     def _cmd_get_capabilities(self):
         cmd = Popen(
-            'smartctl -d {0} -c /dev/{1}'.format(
+            'smartctl -d {0} -c {1}'.format(
                 self._get_device_type(),
-                self.name
+                self.path
             ),
             shell=True,
             stdout=PIPE,
@@ -464,8 +464,8 @@ class Device(object):
 
     def _cmd_sataphy(self, test):
         cmd = Popen(
-            'smartctl -d {0} -l sataphy /dev/{1}'.format(
-                smartctl_type[test], self.name
+            'smartctl -d {0} -l sataphy {1}'.format(
+                smartctl_type[test], self.path
             ),
             shell=True,
             stdout=PIPE,
@@ -475,7 +475,7 @@ class Device(object):
 
     def _cmd_sasphy(self):
         cmd = Popen(
-            'smartctl -d scsi -l sasphy /dev/{0}'.format(self.name),
+            'smartctl -d scsi -l sasphy {0}'.format(self.path),
             shell=True,
             stdout=PIPE,
             stderr=PIPE
@@ -484,7 +484,7 @@ class Device(object):
 
     def _cmd_scsi_all(self):
         cmd = Popen(
-            'smartctl -d scsi -a /dev/{0}'.format(self.name),
+            'smartctl -d scsi -a {0}'.format(self.path),
             shell=True,
             stdout=PIPE,
             stderr=PIPE,
