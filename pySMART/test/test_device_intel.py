@@ -318,15 +318,13 @@ class TestDeviceWithIntel:
             mocked_sata.return_value = intel_scsi_cmd_sataphy
             mocked_scan.return_value = intel_cmd_scan_open_as_root
             mocked_cap.return_value = intel_cmd_capabilities
-            devices = [Device("sdg"),
-                       Device('/dev/bus/0', interface='sat+megaraid,10')]
-            for device in devices:
-                assert device.serial == "BTWL435203C0480QGN"
-                assert device.model == "INTEL SSDSC2BB480G4L"
-                assert device.capacity == "480 GB"
-                assert device.firmware is None
-                assert device.supports_smart is True
-                assert device.messages is not None
-                assert device.is_ssd is True
-                assert device.assessment == "PASS"
-                assert device.get_current_test_status() == (0, "The previous self-test routine completed without error or no self-test has ever been run.")
+            device = Device("sdg")
+            assert device.serial == "BTWL435203C0480QGN"
+            assert device.model == "INTEL SSDSC2BB480G4L"
+            assert device.capacity == "480 GB"
+            assert device.firmware is None
+            assert device.supports_smart is True
+            assert device.messages is not None
+            assert device.is_ssd is True
+            assert device.assessment == "PASS"
+            assert device.get_current_test_status() == (0, "The previous self-test routine completed without error or no self-test has ever been run.")
