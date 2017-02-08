@@ -36,6 +36,10 @@ _min_smartctl_ver = {
     'FreeBSD' : {
         'maj' : 6,
         'min' : 1
+        },
+    'Darwin' : {
+        'maj' : 6,
+        'min' : 5
         }
     }
 """

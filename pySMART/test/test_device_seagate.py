@@ -201,12 +201,14 @@ class TestDeviceWithSeagate:
             mocked_sas.return_value = seagate_cmd_sasphy
             mocked_sata.return_value = seagate_cmd_sataphy
             mocked_scan.return_value = cmd_scan_open_as_root
-            device = Device("sdg")
-            assert device.serial == "Z3E018060000Z3E01806"
-            assert device.model == "ST200FM0053"
-            assert device.capacity == "200 GB"
-            assert device.firmware == "LV60"
-            assert device.supports_smart is True
-            assert device.messages is not None
-            assert device.is_ssd is True
-            assert device.assessment == "PASS"
+            devices = [Device("sdg"),
+                       Device('/dev/bus/0', interface='sat+megaraid,11')]
+            for device in devices:
+                assert device.serial == "Z3E018060000Z3E01806"
+                assert device.model == "ST200FM0053"
+                assert device.capacity == "200 GB"
+                assert device.firmware == "LV60"
+                assert device.supports_smart is True
+                assert device.messages is not None
+                assert device.is_ssd is True
+                assert device.assessment == "PASS"
