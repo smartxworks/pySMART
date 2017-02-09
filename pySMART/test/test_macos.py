@@ -186,7 +186,7 @@ class TestDeviceOnMacOs:
             mocked_scan.return_value = macos_cmd_scan_open_as_root
             mocked_all.return_value = macos_cmd_all
             mocked_cap.return_value = macos_cmd_capabilities
-            device = Device("IOService:/AppleACPIPlatformExpert/PCI0@0/AppleACPIPCI/RP06@1C,5/IOPP/SSD0@0/AppleAHCI/PRT0@0/IOAHCIDevice@0/AppleAHCIDiskDriver/IOAHCIBlockStorageDevice")
+            device = Device("IOService:/AppleACPIPlatformExpert/PCI0@0/AppleACPIPCI/RP06@1C,5/IOPP/SSD0@0/AppleAHCI/PRT0@0/IOAHCIDevice@0/AppleAHCIDiskDriver/IOAHCIBlockStorageDevice", interface='ata')
 
             assert device.serial == "S29ANYAG123456"
             assert device.model == "APPLE SSD SM0512G"
