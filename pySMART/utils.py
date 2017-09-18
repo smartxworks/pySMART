@@ -21,6 +21,7 @@ import ctypes
 import os
 import platform
 from subprocess import Popen, PIPE
+from functools import wraps
 import warnings
 
 # Configuration definitions
@@ -119,10 +120,30 @@ def _warning_on_one_line(message, category, filename, lineno, file=None,
 warnings.formatwarning = _warning_on_one_line
 
 
+def cmd_convert_bytes(func):
+    """Keep python 2/3 compatibility by converting Popen bytes into str where
+    appropriate."""
+
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        stdout, stderr = func(*args, **kwargs)
+        if isinstance(stdout, bytes):
+            stdout = stdout.decode()
+        if isinstance(stderr, bytes):
+            stderr = stderr.decode()
+        return stdout, stderr
+    return wrapper
+
+
+@cmd_convert_bytes
+def cmd_smartctl_version():
+    cmd = Popen('/usr/bin/env smartctl --version', shell=True, stdout=PIPE, stderr=PIPE)
+    return cmd.communicate()
+
+
 def verify_smartctl():
     # Verify smartctl is on the system path and meets the minimum required version
-    cmd = Popen('/usr/bin/env smartctl --version', shell=True, stdout=PIPE, stderr=PIPE)
-    _stdout, _stderr = cmd.communicate()
+    _stdout, _stderr = cmd_smartctl_version()
     if _stdout == '':
         raise Exception(
             "Required package 'smartmontools' is not installed, or 'smartctl'\n"
@@ -145,4 +166,4 @@ def verify_smartctl():
             "and may not detect all device types, or may parse device information "
             "incorrectly, if run without these permissions.")
 
-__all__ = ['admin', 'OS', 'pd_to_sd', 'rescan_device_busses', 'smartctl_type']
+__all__ = ['admin', 'cmd_convert_bytes', 'OS', 'pd_to_sd', 'rescan_device_busses', 'smartctl_type']
