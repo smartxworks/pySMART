@@ -128,7 +128,7 @@ class Device(object):
         """
         if self.name is None:
             warnings.warn("\nDevice '{0}' does not exist! "
-                          "This object should be destroyed.".format(self.name))
+                          "This object should be destroyed.".format(self.path))
             return
         # If no interface type was provided, scan for the device
         elif self.interface is None:
@@ -140,7 +140,7 @@ class Device(object):
                 self._classify()
             else:
                 warnings.warn("\nDevice '{0}' does not exist! "
-                              "This object should be destroyed.".format(self.name))
+                              "This object should be destroyed.".format(self.path))
                 return
         # If a valid device was detected, populate its information
         if self.interface is not None:
