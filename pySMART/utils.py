@@ -137,7 +137,7 @@ def cmd_convert_bytes(func):
 
 @cmd_convert_bytes
 def cmd_smartctl_version():
-    cmd = Popen('/usr/bin/env smartctl --version', shell=True, stdout=PIPE, stderr=PIPE)
+    cmd = Popen('smartctl --version', shell=True, stdout=PIPE, stderr=PIPE)
     return cmd.communicate()
 
 

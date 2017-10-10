@@ -128,7 +128,7 @@ class Device(object):
         """
         if self.name is None:
             warnings.warn("\nDevice '{0}' does not exist! "
-                          "This object should be destroyed.".format(name))
+                          "This object should be destroyed.".format(self.path))
             return
         # If no interface type was provided, scan for the device
         elif self.interface is None:
@@ -140,7 +140,7 @@ class Device(object):
                 self._classify()
             else:
                 warnings.warn("\nDevice '{0}' does not exist! "
-                              "This object should be destroyed.".format(name))
+                              "This object should be destroyed.".format(self.path))
                 return
         # If a valid device was detected, populate its information
         if self.interface is not None:
@@ -415,7 +415,7 @@ class Device(object):
 
     @cmd_convert_bytes
     def _cmd_all_with_type(self):
-        cmd = Popen('/usr/bin/env smartctl -d {0} -a {1}'.format(
+        cmd = Popen('smartctl -d {0} -a {1}'.format(
             self._get_device_type(), self.path), shell=True,
             stdout=PIPE, stderr=PIPE)
         return cmd.communicate()
@@ -423,7 +423,7 @@ class Device(object):
     @cmd_convert_bytes
     def _cmd_all(self):
         cmd = Popen(
-            '/usr/bin/env smartctl -a {0}'.format(self.path),
+            'smartctl -a {0}'.format(self.path),
             shell=True,
             stdout=PIPE,
             stderr=PIPE,
@@ -502,7 +502,7 @@ class Device(object):
     @cmd_convert_bytes
     def _cmd_scan_open(self, grep_cmd_name):
         cmd = Popen(
-            '/usr/bin/env smartctl --scan-open | {0} "{1}"'.format(
+            'smartctl --scan-open | {0} "{1}"'.format(
                 grep_cmd_name,
                 self.name,
             ),
