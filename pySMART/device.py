@@ -135,7 +135,7 @@ class Device(object):
             _grep = 'find' if OS == 'Windows' else 'grep'
             _stdout, _stderr = self._cmd_scan_open(_grep)
             if _stdout != '':
-                self.interface = _stdout.split(' ')[2]
+                self.interface = _stdout.decode().strip(' ').split(' ')[2]
                 # Disambiguate the generic interface to a specific type
                 self._classify()
             else:
@@ -205,19 +205,19 @@ class Device(object):
                 test = 'sata'
             # Look for a SATA PHY to detect SAT and SATA
             _stdout, _stderr = self._cmd_sataphy(test)
-            if 'GP Log 0x11' in _stdout.split('\n')[3]:
+            if 'GP Log 0x11' in _stdout.decode().strip('\n').split('\n')[3]:
                 self.interface = test
         # If device type is still SCSI (not changed to SAT above), then
         # check for a SAS PHY
         if self.interface == 'scsi':
             _stdout, _stderr = self._cmd_sasphy()
-            if 'SAS SSP' in _stdout.split('\n')[4]:
+            if 'SAS SSP' in _stdout.decode().strip('\n').split('\n')[4]:
                 self.interface = 'sas'
             # Some older SAS devices do not support the SAS PHY log command.
             # For these, see if smartmontools reports a transport protocol.
             else:
                 _stdout, _stderr = self._cmd_scsi_all()
-                for line in _stdout.split('\n'):
+                for line in _stdout.decode().strip('\n').split('\n'):
                     if 'Transport protocol' in line and 'SAS' in line:
                         self.interface = 'sas'
         # Use scsi as the default type
@@ -245,7 +245,7 @@ class Device(object):
             _stdout, _stderr = self._cmd_get_capabilities()
             data = ""
             collectData = False
-            for line in _stdout.split('\n'):
+            for line in _stdout.decode().strip('\n').split('\n'):
                 if 'Self-test execution status' in line:
                     collectData = True
                 if 'Total time to complete Offline' in line:
@@ -551,7 +551,7 @@ class Device(object):
             _stdout, _stderr = self._cmd_run_test(test_type)
             _success = False
             _running = False
-            for line in _stdout.split('\n'):
+            for line in _stdout.decode().strip('\n').split('\n'):
                 if 'has begun' in line:
                     _success = True
                     self._test_running = True
@@ -782,7 +782,7 @@ class Device(object):
             # hours from the background scan results log.
             if self.diags['Power_On_Hours'] == '-':
                 _stdout, _stderr = self._cmd_power_on_scan()
-                for line in _stdout.split('\n'):
+                for line in _stdout.decode().strip('\n').split('\n'):
                     if 'power on time' in line:
                         self.diags['Power_On_Hours'] = line.split(
                             ':')[1].split(' ')[1]
