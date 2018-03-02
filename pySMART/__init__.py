@@ -104,5 +104,5 @@ from .device_list import DeviceList
 from .test_entry import Test_Entry
 from . import utils
 
-__version__ = '0.3.7'
+__version__ = '0.3.8'
 
