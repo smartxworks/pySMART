@@ -149,7 +149,7 @@ def verify_smartctl():
             "Required package 'smartmontools' is not installed, or 'smartctl'\n"
             "component is not on the system path. Please install and try again.")
     else:
-        for line in _stdout.split('\n'):
+        for line in _stdout.decode().strip('\n').split('\n'):
             if 'release' in line:
                 _ma, _mi = line.strip().split(' ')[2].split('.')
                 if (int(_ma) < _req_ma or
