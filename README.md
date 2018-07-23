@@ -19,5 +19,9 @@ Pull request is very welcome!
 + Health status API.
 + Support for MacOS
 
+# Quick start
+
+just run `pip install pysmart.smartx` to install this package.
+
 # Changelog
 [Follow this link](./changelog.md)
