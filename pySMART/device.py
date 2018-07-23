@@ -540,11 +540,12 @@ class Device(object):
         * **(str):** Estimated self-test completion time if a test is started.
         Otherwise 'None'.
         """
+        test_type = test_type.lower()
         if self._test_running:
             return (1, 'Self-test already in progress. Please wait.',
                     self._test_ECD)
-        if test_type.lower() in ['short', 'long', 'conveyance']:
-            if (test_type.lower() == 'conveyance' and
+        if test_type in ['short', 'long', 'conveyance']:
+            if (test_type == 'conveyance' and
                     self._get_device_type() == 'scsi'):
                 return (2, "Cannot perform 'conveyance' test on SAS/SCSI "
                         "devices.", None)
