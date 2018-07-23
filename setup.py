@@ -41,5 +41,5 @@ setup(
     url='https://github.com/winkidney/pySMARTX',
     license='GNU GPLv2.htm',
     description='Wrapper for smartctl (smartmontools)',
-    long_description=open('README.txt').read(),
+    long_description=open('README.rst').read(),
 )
