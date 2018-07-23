@@ -14,7 +14,10 @@ Pull request is very welcome!
 + Python2/Python3 compatible.
 + Bug fixes.
 + More device-type supports.
+  + Output parse intel ssd
+  + Some seagate hdd's self_test support
 + Health status API.
++ Support for MacOS
 
 # Changelog
 [Follow this link](./changelog.md)
