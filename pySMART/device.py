@@ -403,8 +403,6 @@ class Device(object):
                     self.messages.append("".join(
                         [attr.name, " failed in the past with value ",
                          attr.worst, ". [Threshold: ", attr.thresh, ']']))
-                    if not self.assessment == 'FAIL':
-                        self.assessment = 'WARN'
                 elif attr.when_failed == 'FAILING_NOW':
                     self.assessment = 'FAIL'
                     self.messages.append("".join(
@@ -415,8 +413,6 @@ class Device(object):
                         [attr.name, " says it failed '", attr.when_failed,
                          "'. [V=", attr.value, ",W=", attr.worst, ",T=",
                          attr.thresh, ']']))
-                    if not self.assessment == 'FAIL':
-                        self.assessment = 'WARN'
 
     @cmd_convert_bytes
     def _cmd_all_with_type(self):
