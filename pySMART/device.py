@@ -104,6 +104,11 @@ class Device(object):
         for this device, as provided by smartctl. Indexed by attribute #,
         values are set to 'None' for attributes not suported by this device.
         """
+        self.supports_self_test_log = None
+        """
+        **(bool):** True, if Self-test logging is supported
+        False otherwise.
+        """
         self.tests = []
         """
         **(list of `Log_Entry`):** Contains the complete SMART self-test log
@@ -681,6 +686,11 @@ class Device(object):
                     self.assessment = 'FAIL'
                     parse_ascq = True  # Set flag to capture status message
                     message = line.split(':')[1].lstrip().rstrip()
+            if 'self' and 'test' and 'log' and not 'selective' in line.lower():
+                if 'revision number' in line:
+                    self.supports_self_test_log = True
+                elif 'not' and 'support' in line:
+                    self.supports_self_test_log = False
             # SMART Attribute table parsing
             if '0x0' in line and '_' in line:
                 # Replace multiple space separators with a single space, then
