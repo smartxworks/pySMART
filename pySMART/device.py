@@ -126,6 +126,11 @@ class Device(object):
         SAS and SCSI devices, since ATA/SATA SMART attributes are manufacturer
         proprietary.
         """
+        self.temperature = None
+        """
+        **(int or None): Since SCSI disks do not report attributes like ATA ones
+        we need to grep/regex the shit outta the normal "smartctl -a" output
+        """
         if self.name is None:
             warnings.warn("\nDevice '{0}' does not exist! "
                           "This object should be destroyed.".format(self.path))
@@ -602,6 +607,9 @@ class Device(object):
         Can be called at any time to refresh the `pySMART.device.Device`
         object's data content.
         """
+        # set temperature back to None so that if update() is called more than once
+        # any logic that relies on self.temperature to be None to rescan it works.it
+        self.temperature = None
         _stdout, _stderr = self._cmd_all_with_type()
         parse_self_tests = False
         parse_ascq = False
@@ -761,6 +769,11 @@ class Device(object):
                 self.diags['Non-Medium_Errors'] = line.split(':')[1].strip()
             if 'Accumulated power on time' in line:
                 self.diags['Power_On_Hours'] = line.split(':')[1].split(' ')[1]
+            if 'Current Drive Temperature' in line:
+                try:
+                    self.temperature = int(line.split(':')[-1].strip().split()[0])
+                except ValueError:
+                    pass
         if not self._get_device_type() == 'scsi':
             # Parse the SMART table for below-threshold attributes and create
             # corresponding warnings for non-SCSI disks
@@ -787,5 +800,20 @@ class Device(object):
                     if 'power on time' in line:
                         self.diags['Power_On_Hours'] = line.split(
                             ':')[1].split(' ')[1]
+        # map temperature
+        if self.temperature is None:
+            # in this case the disk is probably ata
+            try:
+                # Some disks report temperature to attribute number 190 ('Airflow_Temperature_Cel')
+                # see https://bugs.freenas.org/issues/20860
+                temp_attr = self.attributes[194] or self.attributes[190]
+                self.temperature = int(temp_attr.raw)
+            except (ValueError, AttributeError):
+                pass
+        # Now that we have finished the update routine, if we did not find a runnning selftest
+        # nuke the self._test_ECD and self._test_progress
+        if self._test_running is False:
+            self._test_ECD = None
+            self._test_progress = None
 
 __all__ = ['Device']
