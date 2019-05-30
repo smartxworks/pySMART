@@ -212,3 +212,4 @@ class TestDeviceWithSeagate:
                 assert device.messages is not None
                 assert device.is_ssd is True
                 assert device.assessment == "PASS"
+                assert device.temperature == 28
