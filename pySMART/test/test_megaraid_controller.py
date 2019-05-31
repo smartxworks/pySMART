@@ -261,3 +261,4 @@ class TestMegaraidController:
             assert device.is_ssd is False
             assert device.assessment == 'PASS'
             assert device.get_current_test_status() == (0, 'The previous self-test routine completed without error or no self-test has ever been run.')
+            assert device.temperature == 39

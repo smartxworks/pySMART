@@ -210,3 +210,4 @@ class TestDeviceWithSamsung:
             assert device.is_ssd is True
             assert device.assessment == "WARN"
             assert device.get_current_test_status() == (15, "Self-test routine in progress... 90% of test remaining.")
+            assert device.temperature == None
