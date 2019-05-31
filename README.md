@@ -23,5 +23,8 @@ Pull request is very welcome!
 
 just run `pip install pysmart.smartx` to install this package.
 
-# Changelog
-[Follow this link](./changelog.md)
+# ChangeLog
+
++ 2019-05-31: Add temperature attribute on `Device` object 
++ 2018-03-01: Upload a new version with stdout-encoding fix by DPSB
+
