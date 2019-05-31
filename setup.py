@@ -38,7 +38,7 @@ setup(
     author='Marc Herndon',
     author_email='Herndon.MarcT@gmail.com',
     packages=['pySMART'],
-    url='https://github.com/winkidney/pySMARTX',
+    url='https://github.com/smartxworks/pySMART',
     license='GNU GPLv2.htm',
     description='Wrapper for smartctl (smartmontools)',
     long_description=open('README.md').read(),
