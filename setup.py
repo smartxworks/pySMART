@@ -42,4 +42,5 @@ setup(
     license='GNU GPLv2.htm',
     description='Wrapper for smartctl (smartmontools)',
     long_description=open('README.md').read(),
+    long_description_content_type="text/markdown",
 )
