@@ -104,6 +104,11 @@ class Device(object):
         for this device, as provided by smartctl. Indexed by attribute #,
         values are set to 'None' for attributes not suported by this device.
         """
+        self.supports_self_test_log = None
+        """
+        **(bool):** True, if Self-test logging is supported
+        False otherwise.
+        """
         self.tests = []
         """
         **(list of `Log_Entry`):** Contains the complete SMART self-test log
@@ -403,8 +408,6 @@ class Device(object):
                     self.messages.append("".join(
                         [attr.name, " failed in the past with value ",
                          attr.worst, ". [Threshold: ", attr.thresh, ']']))
-                    if not self.assessment == 'FAIL':
-                        self.assessment = 'WARN'
                 elif attr.when_failed == 'FAILING_NOW':
                     self.assessment = 'FAIL'
                     self.messages.append("".join(
@@ -415,8 +418,6 @@ class Device(object):
                         [attr.name, " says it failed '", attr.when_failed,
                          "'. [V=", attr.value, ",W=", attr.worst, ",T=",
                          attr.thresh, ']']))
-                    if not self.assessment == 'FAIL':
-                        self.assessment = 'WARN'
 
     @cmd_convert_bytes
     def _cmd_all_with_type(self):
@@ -689,6 +690,11 @@ class Device(object):
                     self.assessment = 'FAIL'
                     parse_ascq = True  # Set flag to capture status message
                     message = line.split(':')[1].lstrip().rstrip()
+            if 'self' and 'test' and 'log' and not 'selective' in line.lower():
+                if 'revision number' in line:
+                    self.supports_self_test_log = True
+                elif 'not' and 'support' in line:
+                    self.supports_self_test_log = False
             # SMART Attribute table parsing
             if '0x0' in line and '_' in line:
                 # Replace multiple space separators with a single space, then
